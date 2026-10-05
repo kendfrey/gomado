@@ -1,0 +1,31 @@
+{
+	"lineWidth": 120,
+	"indentWidth": 4,
+	"useTabs": true,
+	"newLineKind": "auto",
+	"typescript": {
+		"semiColons": "always",
+		"useBraces": "preferNone",
+		"bracePosition": "nextLine",
+		"singleBodyPosition": "nextLine",
+		"nextControlFlowPosition": "nextLine",
+		"arrowFunction.useParentheses": "preferNone"
+	},
+	"json": {
+	},
+	"malva": {
+		"declarationOrder": "smacss"
+	},
+	"markup": {
+	},
+	"excludes": [
+		"**/node_modules",
+		"**/*-lock.json"
+	],
+	"plugins": [
+		"npm:@dprint/typescript@0.96.1",
+		"npm:@dprint/json@0.25.1",
+		"npm:dprint-plugin-malva@0.16.0",
+		"npm:dprint-plugin-markup@0.27.5"
+	]
+}

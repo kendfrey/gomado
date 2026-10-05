@@ -1,0 +1,32 @@
+{
+	"name": "gomado",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/gomado.d.ts",
+			"import": "./dist/gomado.js",
+			"require": "./dist/gomado.umd.cjs"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc && vite build",
+		"preview": "vite preview"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@microsoft/api-extractor": "^7.59.3",
+		"dprint": "^0.59.0",
+		"eslint": "^10.12.0",
+		"globals": "^17.13.0",
+		"typescript": "~6.0.2",
+		"typescript-eslint": "^8.71.0",
+		"unplugin-dts": "^1.1.2",
+		"vite": "^8.3.0"
+	}
+}
