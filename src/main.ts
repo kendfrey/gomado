@@ -1,4 +1,4 @@
-import { drawBoard } from "./lib";
+import { drawBoard, enableAutoRender } from "./lib";
 import "./style.css";
 
 const demos: Record<string, () => void> = {
@@ -8,6 +8,8 @@ const demos: Record<string, () => void> = {
 
 const demosContainer = document.querySelector<HTMLDivElement>("#demos")!;
 const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
+enableAutoRender(canvas);
+
 for (const key in demos)
 {
 	const btn = document.createElement("button");
