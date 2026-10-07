@@ -4,6 +4,7 @@ export interface BoardContents
 {
 	width: number;
 	height: number;
+	stones: Record<string, Coord[]>;
 }
 
 export interface BoardStyle
@@ -55,11 +56,15 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	const boardX = Math.floor((w - boardWidth) * 0.5) + marginPx;
 	const boardY = Math.floor((h - boardHeight) * 0.5) + marginPx;
 	ctx.translate(boardX, boardY);
+	ctx.beginPath();
+	ctx.rect(-marginPx, -marginPx, boardWidth, boardHeight);
+	ctx.clip();
 
 	const fullStyle: BoardStyle = { ...defaultStyle, ...style };
 
 	drawBackground();
 	drawLines();
+	drawStones();
 	return;
 
 	function drawBackground()
@@ -117,50 +122,118 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 			ctx.arc((x + 0.5) * s, (y + 0.5) * s, 3 * devicePixelRatio, 0, Math.PI * 2);
 			ctx.fill();
 		}
+
+		function getStarPoints(): Coord[]
+		{
+			const starPoints: Coord[] = [];
+
+			if (contents.width % 2 === 1 && contents.height % 2 === 1)
+			{
+				// Tengen
+				starPoints.push([(contents.width - 1) * 0.5, (contents.height - 1) * 0.5]);
+			}
+
+			if (contents.width === 9 && contents.height === 9)
+			{
+				// 3-3 points
+				starPoints.push([2, 2]);
+				starPoints.push([2, 6]);
+				starPoints.push([6, 2]);
+				starPoints.push([6, 6]);
+			}
+			else if (contents.width > 9 && contents.height > 9)
+			{
+				// 4-4 points
+				starPoints.push([3, 3]);
+				starPoints.push([3, contents.height - 4]);
+				starPoints.push([contents.width - 4, 3]);
+				starPoints.push([contents.width - 4, contents.height - 4]);
+			}
+
+			if (contents.width >= 19 && contents.height >= 19)
+			{
+				if (contents.width % 2 === 1)
+				{
+					// Side star points
+					starPoints.push([(contents.width - 1) * 0.5, 3]);
+					starPoints.push([(contents.width - 1) * 0.5, contents.height - 4]);
+				}
+				if (contents.height % 2 === 1)
+				{
+					// Side star points
+					starPoints.push([3, (contents.height - 1) * 0.5]);
+					starPoints.push([contents.width - 4, (contents.height - 1) * 0.5]);
+				}
+			}
+			return starPoints;
+		}
 	}
 
-	function getStarPoints(): Coord[]
+	function drawStones()
 	{
-		const starPoints: Coord[] = [];
+		drawShadows();
 
-		if (contents.width % 2 === 1 && contents.height % 2 === 1)
+		for (const [colour, stones] of Object.entries(contents.stones))
 		{
-			// Tengen
-			starPoints.push([(contents.width - 1) * 0.5, (contents.height - 1) * 0.5]);
-		}
-
-		if (contents.width === 9 && contents.height === 9)
-		{
-			// 3-3 points
-			starPoints.push([2, 2]);
-			starPoints.push([2, 6]);
-			starPoints.push([6, 2]);
-			starPoints.push([6, 6]);
-		}
-		else if (contents.width > 9 && contents.height > 9)
-		{
-			// 4-4 points
-			starPoints.push([3, 3]);
-			starPoints.push([3, contents.height - 4]);
-			starPoints.push([contents.width - 4, 3]);
-			starPoints.push([contents.width - 4, contents.height - 4]);
-		}
-
-		if (contents.width >= 19 && contents.height >= 19)
-		{
-			if (contents.width % 2 === 1)
+			for (const [x, y] of stones)
 			{
-				// Side star points
-				starPoints.push([(contents.width - 1) * 0.5, 3]);
-				starPoints.push([(contents.width - 1) * 0.5, contents.height - 4]);
-			}
-			if (contents.height % 2 === 1)
-			{
-				// Side star points
-				starPoints.push([3, (contents.height - 1) * 0.5]);
-				starPoints.push([contents.width - 4, (contents.height - 1) * 0.5]);
+				const gradient = ctx.createRadialGradient(
+					(x + 0.35) * s,
+					(y + 0.35) * s,
+					0,
+					(x + 0.35) * s,
+					(y + 0.35) * s,
+					s * 0.7,
+				);
+				gradient.addColorStop(
+					0,
+					`color(from ${colour} srgb calc(r * 0.75 + 0.25) calc(g * 0.75 + 0.25) calc(b * 0.75 + 0.25))`,
+				);
+				gradient.addColorStop(
+					1,
+					`color(from ${colour} srgb calc(r * 0.75) calc(g * 0.75) calc(b * 0.75))`,
+				);
+				ctx.fillStyle = gradient;
+				ctx.beginPath();
+				ctx.arc((x + 0.5) * s, (y + 0.5) * s, s * 0.5, 0, Math.PI * 2);
+				ctx.fill();
 			}
 		}
-		return starPoints;
+	}
+
+	function drawShadows()
+	{
+		ctx.save();
+		ctx.globalCompositeOperation = "multiply";
+
+		for (const [colour, stones] of Object.entries(contents.stones))
+		{
+			for (const [x, y] of stones)
+			{
+				const gradient = ctx.createRadialGradient(
+					(x + 0.55) * s,
+					(y + 0.55) * s,
+					s * 0.3,
+					(x + 0.55) * s,
+					(y + 0.55) * s,
+					s * 0.6,
+				);
+				gradient.addColorStop(
+					0,
+					`color(from ${colour} srgb calc(r * 0.5) calc(g * 0.5) calc(b * 0.5))`,
+				);
+				gradient.addColorStop(
+					0.7,
+					`color(from ${colour} srgb calc(r * 0.1 + 0.8) calc(g * 0.1 + 0.8) calc(b * 0.1 + 0.8))`,
+				);
+				gradient.addColorStop(1, "#ffffff");
+				ctx.fillStyle = gradient;
+				ctx.beginPath();
+				ctx.arc((x + 0.55) * s, (y + 0.55) * s, s * 0.6, 0, Math.PI * 2);
+				ctx.fill();
+			}
+		}
+
+		ctx.restore();
 	}
 }
