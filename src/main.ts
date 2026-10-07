@@ -1,9 +1,9 @@
-import { drawBoard, enableAutoRender } from "./lib";
+import { type BoardStyle, drawBoard, enableAutoRender } from "./lib";
 import "./style.css";
 
 const demos: Record<string, () => void> = {
 	demo1: demo1,
-	demo2: demo2,
+	random: randomDemo,
 };
 
 const demosContainer = document.querySelector<HTMLDivElement>("#demos")!;
@@ -20,10 +20,60 @@ for (const key in demos)
 
 function demo1()
 {
-	drawBoard(canvas, { width: 10, height: 10 });
+	drawBoard(canvas, { width: 19, height: 19 });
 }
 
-function demo2()
+function randomDemo()
 {
-	drawBoard(canvas, { width: 200, height: 100 });
+	const contents = { width: 19, height: 19 };
+	if (Math.random() < 0.5)
+	{
+		if (Math.random() < 0.5)
+		{
+			if (Math.random() < 0.5)
+			{
+				contents.width = 9;
+				contents.height = 9;
+			}
+			else
+			{
+				contents.width = 13;
+				contents.height = 13;
+			}
+		}
+		else
+		{
+			contents.width = Math.floor(Math.random() * 30) + 1;
+			contents.height = Math.floor(Math.random() * 30) + 1;
+		}
+	}
+
+	const style: Partial<BoardStyle> = {};
+	if (Math.random() < 0.5)
+		style.backgroundColour = randomColour();
+	if (Math.random() < 0.5)
+		style.woodColour = Math.random() < 0.5 ? randomColour() : null;
+	if (Math.random() < 0.5)
+		style.woodScale = Math.tan(Math.random() * Math.PI * 0.5);
+	if (Math.random() < 0.5)
+		style.lineColour = randomColour();
+	if (Math.random() < 0.5)
+	{
+		style.starPoints = [];
+		const num = Math.floor(Math.random() * 10);
+		for (let i = 0; i < num; i++)
+		{
+			style.starPoints.push([
+				Math.floor(Math.random() * contents.width),
+				Math.floor(Math.random() * contents.height),
+			]);
+		}
+	}
+
+	drawBoard(canvas, contents, style);
+
+	function randomColour()
+	{
+		return `#${Math.floor(Math.random() * 0x1000000).toString(16).padStart(6, "0")}`;
+	}
 }
