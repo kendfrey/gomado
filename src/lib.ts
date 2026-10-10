@@ -133,51 +133,6 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		}
 
 		ctx.drawImage(linesCanvas, 0, 0);
-
-		function getStarPoints(): Coord[]
-		{
-			const starPoints: Coord[] = [];
-
-			if (contents.width % 2 === 1 && contents.height % 2 === 1)
-			{
-				// Tengen
-				starPoints.push([(contents.width - 1) * 0.5, (contents.height - 1) * 0.5]);
-			}
-
-			if (contents.width === 9 && contents.height === 9)
-			{
-				// 3-3 points
-				starPoints.push([2, 2]);
-				starPoints.push([2, 6]);
-				starPoints.push([6, 2]);
-				starPoints.push([6, 6]);
-			}
-			else if (contents.width > 9 && contents.height > 9)
-			{
-				// 4-4 points
-				starPoints.push([3, 3]);
-				starPoints.push([3, contents.height - 4]);
-				starPoints.push([contents.width - 4, 3]);
-				starPoints.push([contents.width - 4, contents.height - 4]);
-			}
-
-			if (contents.width >= 19 && contents.height >= 19)
-			{
-				if (contents.width % 2 === 1)
-				{
-					// Side star points
-					starPoints.push([(contents.width - 1) * 0.5, 3]);
-					starPoints.push([(contents.width - 1) * 0.5, contents.height - 4]);
-				}
-				if (contents.height % 2 === 1)
-				{
-					// Side star points
-					starPoints.push([3, (contents.height - 1) * 0.5]);
-					starPoints.push([contents.width - 4, (contents.height - 1) * 0.5]);
-				}
-			}
-			return starPoints;
-		}
 	}
 
 	function drawStones()
@@ -286,6 +241,51 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 					break;
 			}
 		}
+	}
+
+	function getStarPoints(): Coord[]
+	{
+		const starPoints: Coord[] = [];
+
+		if (contents.width % 2 === 1 && contents.height % 2 === 1)
+		{
+			// Tengen
+			starPoints.push([(contents.width - 1) * 0.5, (contents.height - 1) * 0.5]);
+		}
+
+		if (contents.width === 9 && contents.height === 9)
+		{
+			// 3-3 points
+			starPoints.push([2, 2]);
+			starPoints.push([2, 6]);
+			starPoints.push([6, 2]);
+			starPoints.push([6, 6]);
+		}
+		else if (contents.width > 9 && contents.height > 9)
+		{
+			// 4-4 points
+			starPoints.push([3, 3]);
+			starPoints.push([3, contents.height - 4]);
+			starPoints.push([contents.width - 4, 3]);
+			starPoints.push([contents.width - 4, contents.height - 4]);
+		}
+
+		if (contents.width >= 19 && contents.height >= 19)
+		{
+			if (contents.width % 2 === 1)
+			{
+				// Side star points
+				starPoints.push([(contents.width - 1) * 0.5, 3]);
+				starPoints.push([(contents.width - 1) * 0.5, contents.height - 4]);
+			}
+			if (contents.height % 2 === 1)
+			{
+				// Side star points
+				starPoints.push([3, (contents.height - 1) * 0.5]);
+				starPoints.push([contents.width - 4, (contents.height - 1) * 0.5]);
+			}
+		}
+		return starPoints;
 	}
 
 	function shineGradient(colour: string, x: number, y: number)
