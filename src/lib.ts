@@ -6,6 +6,8 @@ export interface BoardContents
 	height: number;
 	stones: Record<string, Coord[]>;
 	labels?: [Coord, string][];
+	policy?: number[];
+	policyQuality?: number[];
 }
 
 export interface BoardStyle
@@ -89,6 +91,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	drawLines();
 	drawStones();
 	drawLabels();
+	drawPolicy();
 	return;
 
 	function drawBackground()
@@ -514,6 +517,30 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 			ctx.lineTo((x + 0.5) * s, (y + 0.8) * s);
 			ctx.moveTo((x + 0.2) * s, (y + 0.5) * s);
 			ctx.lineTo((x + 0.8) * s, (y + 0.5) * s);
+		}
+	}
+
+	function drawPolicy()
+	{
+		if (!contents.policy)
+			return;
+
+		for (let i = 0; i < contents.policy.length; i++)
+		{
+			if (contents.policy[i] > 0.001)
+			{
+				const x = i % contents.width;
+				const y = Math.floor(i / contents.width);
+				ctx.beginPath();
+				ctx.arc((x + 0.5) * s, (y + 0.5) * s, Math.sqrt(contents.policy[i]) * s * 0.5, 0, 2 * Math.PI);
+				ctx.closePath();
+				const quality = Math.max(-1, Math.min(1, contents.policyQuality?.[i] ?? 0));
+				ctx.fillStyle = `oklch(0.75 0.25 ${140 + quality * 140})`;
+				ctx.strokeStyle = fullStyle.lineColour;
+				ctx.lineWidth = 0.5 * devicePixelRatio;
+				ctx.fill();
+				ctx.stroke();
+			}
 		}
 	}
 
