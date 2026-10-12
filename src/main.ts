@@ -171,6 +171,7 @@ function randomDemo()
 		contents.labels = [];
 	const collections = Object.values(contents.stones);
 	const symbols = ["circle", "cross", "square", "triangle"];
+	const coordLocations = ["all", "none", "top-left", "bottom-left", "top-right", "bottom-right"] as const;
 	for (let y = 0; y < contents.height; y++)
 	{
 		for (let x = 0; x < contents.width; x++)
@@ -213,6 +214,13 @@ function randomDemo()
 			]);
 		}
 	}
+	if (Math.random() < 0.5)
+		style.margin = Math.max(0, Math.min(1, Math.random() * 1.5 - 0.25));
+	if (Math.random() < 0.5)
+		style.coords = "kanji";
+	style.coordsLocation = coordLocations[Math.floor(Math.random() * coordLocations.length)];
+	if (Math.random() < 0.1)
+		style.fontFace = "Comic Sans MS";
 
 	drawBoard(canvas, contents, style);
 

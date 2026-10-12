@@ -15,6 +15,10 @@ export interface BoardStyle
 	woodScale: number;
 	lineColour: string;
 	starPoints: Coord[] | "auto";
+	margin: number;
+	coords: "A1" | "kanji";
+	coordsLocation: "all" | "none" | "top-left" | "bottom-left" | "top-right" | "bottom-right";
+	fontFace: string;
 }
 
 const defaultStyle: BoardStyle = {
@@ -23,6 +27,10 @@ const defaultStyle: BoardStyle = {
 	woodScale: 2,
 	lineColour: "black",
 	starPoints: "auto",
+	margin: 0.1,
+	coords: "A1",
+	coordsLocation: "all",
+	fontFace: "Arial, Helvetica, sans-serif",
 };
 
 const boardContentsCache: WeakMap<HTMLCanvasElement, [BoardContents, Partial<BoardStyle> | undefined]> = new WeakMap();
@@ -41,6 +49,7 @@ export function enableAutoRender(canvas: HTMLCanvasElement): () => void
 
 export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, style?: Partial<BoardStyle>)
 {
+	const fullStyle: BoardStyle = { ...defaultStyle, ...style };
 	boardContentsCache.set(canvas, [contents, style]);
 	const w = canvas.width = canvas.clientWidth * devicePixelRatio;
 	const h = canvas.height = canvas.clientHeight * devicePixelRatio;
@@ -48,20 +57,29 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 
 	ctx.clearRect(0, 0, w, h);
 
-	const margin = 0.1; // in stone units
-	const s =
-		Math.floor((Math.min(w / (contents.width + margin * 2), h / (contents.height + margin * 2)) + 1) * 0.5) * 2 - 1;
-	const marginPx = Math.floor(margin * s);
-	const boardWidth = contents.width * s + marginPx * 2;
-	const boardHeight = contents.height * s + marginPx * 2;
-	const boardX = Math.floor((w - boardWidth) * 0.5) + marginPx;
-	const boardY = Math.floor((h - boardHeight) * 0.5) + marginPx;
+	const coordSides = getCoordSides();
+	const marginTop = fullStyle.margin + (coordSides.top ? 1 : 0);
+	const marginBottom = fullStyle.margin + (coordSides.bottom ? 1 : 0);
+	const marginLeft = fullStyle.margin + (coordSides.left ? 1 : 0);
+	const marginRight = fullStyle.margin + (coordSides.right ? 1 : 0);
+	const s = Math.floor(
+				(Math.min(
+					w / (contents.width + marginLeft + marginRight),
+					h / (contents.height + marginTop + marginBottom),
+				) + 1) * 0.5,
+			) * 2 - 1;
+	const marginTopPx = Math.floor(marginTop * s);
+	const marginBottomPx = Math.floor(marginBottom * s);
+	const marginLeftPx = Math.floor(marginLeft * s);
+	const marginRightPx = Math.floor(marginRight * s);
+	const boardWidth = contents.width * s + marginLeftPx + marginRightPx;
+	const boardHeight = contents.height * s + marginTopPx + marginBottomPx;
+	const boardX = Math.floor((w - boardWidth) * 0.5) + marginLeftPx;
+	const boardY = Math.floor((h - boardHeight) * 0.5) + marginTopPx;
 	ctx.translate(boardX, boardY);
 	ctx.beginPath();
-	ctx.rect(-marginPx, -marginPx, boardWidth, boardHeight);
+	ctx.rect(-marginLeftPx, -marginTopPx, boardWidth, boardHeight);
 	ctx.clip();
-
-	const fullStyle: BoardStyle = { ...defaultStyle, ...style };
 
 	const stones = new Map<string, string>(
 		Object.entries(contents.stones).flatMap(([colour, coords]) => coords.map(([x, y]) => [`${x},${y}`, colour])),
@@ -76,10 +94,10 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	function drawBackground()
 	{
 		ctx.fillStyle = fullStyle.backgroundColour;
-		ctx.fillRect(-marginPx, -marginPx, boardWidth, boardHeight);
+		ctx.fillRect(-marginLeftPx, -marginTopPx, boardWidth, boardHeight);
 		if (fullStyle.woodColour !== null)
 		{
-			const gradient = ctx.createLinearGradient(-marginPx, 0, -marginPx + boardWidth, 0);
+			const gradient = ctx.createLinearGradient(-marginLeftPx, 0, -marginLeftPx + boardWidth, 0);
 			let a = boardWidth;
 			for (let x = 0; x < boardWidth; x += fullStyle.woodScale * devicePixelRatio)
 			{
@@ -88,7 +106,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 				gradient.addColorStop(x / boardWidth, `color(from ${fullStyle.woodColour} srgb r g b / ${alpha})`);
 			}
 			ctx.fillStyle = gradient;
-			ctx.fillRect(-marginPx, -marginPx, boardWidth, boardHeight);
+			ctx.fillRect(-marginLeftPx, -marginTopPx, boardWidth, boardHeight);
 		}
 	}
 
@@ -189,19 +207,16 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 
 	function drawLabels()
 	{
-		if (!contents.labels)
-			return;
-
 		ctx.textAlign = "center";
 		ctx.textBaseline = "top";
-		ctx.font = `bold ${s * 0.7}px Arial, Helvetica, sans-serif`;
-		for (const [[x, y], label] of contents.labels)
+		ctx.lineWidth = s * 0.075;
+		ctx.font = `bold ${s * 0.7}px ${fullStyle.fontFace}`;
+		for (const [[x, y], label] of (contents.labels ?? []).concat(getCoordLabels()))
 		{
 			const stoneColour = stones.get(`${x},${y}`);
 			const labelColour = stoneColour !== undefined
 				? shineGradient(`oklch(from ${stoneColour} calc(max(0, min(1, (l - 0.5) * -infinity))) 0 0)`, x, y)
 				: fullStyle.lineColour;
-			ctx.lineWidth = s * 0.075;
 			ctx.strokeStyle = labelColour;
 			ctx.fillStyle = labelColour;
 			switch (label)
@@ -209,9 +224,11 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 				case "circle":
 					ctx.beginPath();
 					ctx.arc((x + 0.5) * s, (y + 0.5) * s, s * 0.25, 0, Math.PI * 2);
+					ctx.closePath();
 					ctx.stroke();
 					break;
 				case "cross":
+					ctx.lineCap = "square";
 					ctx.beginPath();
 					ctx.moveTo((x + 0.25) * s, (y + 0.25) * s);
 					ctx.lineTo((x + 0.75) * s, (y + 0.75) * s);
@@ -232,6 +249,63 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 					ctx.closePath();
 					ctx.stroke();
 					break;
+				case "kanji1":
+					drawKanjiLabel(drawKanji1, x, y);
+					break;
+				case "kanji2":
+					drawKanjiLabel(drawKanji2, x, y);
+					break;
+				case "kanji3":
+					drawKanjiLabel(drawKanji3, x, y);
+					break;
+				case "kanji4":
+					drawKanjiLabel(drawKanji4, x, y);
+					break;
+				case "kanji5":
+					drawKanjiLabel(drawKanji5, x, y);
+					break;
+				case "kanji6":
+					drawKanjiLabel(drawKanji6, x, y);
+					break;
+				case "kanji7":
+					drawKanjiLabel(drawKanji7, x, y);
+					break;
+				case "kanji8":
+					drawKanjiLabel(drawKanji8, x, y);
+					break;
+				case "kanji9":
+					drawKanjiLabel(drawKanji9, x, y);
+					break;
+				case "kanji10":
+					drawKanjiLabel(drawKanji10, x, y);
+					break;
+				case "kanji11":
+					drawKanjiLabel2(drawKanji1, x, y);
+					break;
+				case "kanji12":
+					drawKanjiLabel2(drawKanji2, x, y);
+					break;
+				case "kanji13":
+					drawKanjiLabel2(drawKanji3, x, y);
+					break;
+				case "kanji14":
+					drawKanjiLabel2(drawKanji4, x, y);
+					break;
+				case "kanji15":
+					drawKanjiLabel2(drawKanji5, x, y);
+					break;
+				case "kanji16":
+					drawKanjiLabel2(drawKanji6, x, y);
+					break;
+				case "kanji17":
+					drawKanjiLabel2(drawKanji7, x, y);
+					break;
+				case "kanji18":
+					drawKanjiLabel2(drawKanji8, x, y);
+					break;
+				case "kanji19":
+					drawKanjiLabel2(drawKanji9, x, y);
+					break;
 				default:
 					ctx.fillText(
 						label,
@@ -240,6 +314,206 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 					);
 					break;
 			}
+		}
+
+		function drawKanjiLabel(draw: (x: number, y: number) => void, x: number, y: number)
+		{
+			ctx.beginPath();
+			draw(x, y);
+			ctx.lineCap = "butt";
+			ctx.stroke();
+		}
+
+		function drawKanjiLabel2(draw2: (x: number, y: number) => void, x: number, y: number)
+		{
+			ctx.save();
+			ctx.scale(1, 0.5);
+			ctx.beginPath();
+			drawKanji10(x, y * 2 + 0.15);
+			draw2(x, y * 2 + 0.85);
+			ctx.restore();
+			ctx.lineCap = "butt";
+			ctx.stroke();
+		}
+
+		function drawKanji1(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.22) * s, (y + 0.5) * s);
+			ctx.lineTo((x + 0.78) * s, (y + 0.5) * s);
+		}
+
+		function drawKanji2(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.26) * s, (y + 0.3) * s);
+			ctx.lineTo((x + 0.74) * s, (y + 0.3) * s);
+			ctx.moveTo((x + 0.2) * s, (y + 0.7) * s);
+			ctx.lineTo((x + 0.8) * s, (y + 0.7) * s);
+		}
+
+		function drawKanji3(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.25) * s, (y + 0.28) * s);
+			ctx.lineTo((x + 0.75) * s, (y + 0.28) * s);
+			ctx.moveTo((x + 0.29) * s, (y + 0.5) * s);
+			ctx.lineTo((x + 0.71) * s, (y + 0.5) * s);
+			ctx.moveTo((x + 0.2) * s, (y + 0.72) * s);
+			ctx.lineTo((x + 0.8) * s, (y + 0.72) * s);
+		}
+
+		function drawKanji4(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.25) * s, (y + 0.78) * s);
+			ctx.lineTo((x + 0.25) * s, (y + 0.25) * s);
+			ctx.lineTo((x + 0.75) * s, (y + 0.25) * s);
+			ctx.lineTo((x + 0.75) * s, (y + 0.78) * s);
+			ctx.moveTo((x + 0.25) * s, (y + 0.7) * s);
+			ctx.lineTo((x + 0.75) * s, (y + 0.7) * s);
+			ctx.moveTo((x + 0.42) * s, (y + 0.25) * s);
+			ctx.bezierCurveTo(
+				(x + 0.42) * s,
+				(y + 0.45) * s,
+				(x + 0.4) * s,
+				(y + 0.5) * s,
+				(x + 0.32) * s,
+				(y + 0.58) * s,
+			);
+			ctx.moveTo((x + 0.57) * s, (y + 0.25) * s);
+			ctx.lineTo((x + 0.57) * s, (y + 0.45) * s);
+			ctx.bezierCurveTo(
+				(x + 0.57) * s,
+				(y + 0.5) * s,
+				(x + 0.60) * s,
+				(y + 0.53) * s,
+				(x + 0.65) * s,
+				(y + 0.53) * s,
+			);
+			ctx.lineTo((x + 0.7) * s, (y + 0.53) * s);
+		}
+
+		function drawKanji5(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.22) * s, (y + 0.26) * s);
+			ctx.lineTo((x + 0.78) * s, (y + 0.26) * s);
+			ctx.moveTo((x + 0.47) * s, (y + 0.26) * s);
+			ctx.lineTo((x + 0.36) * s, (y + 0.74) * s);
+			ctx.moveTo((x + 0.27) * s, (y + 0.46) * s);
+			ctx.lineTo((x + 0.65) * s, (y + 0.46) * s);
+			ctx.lineTo((x + 0.65) * s, (y + 0.74) * s);
+			ctx.moveTo((x + 0.2) * s, (y + 0.74) * s);
+			ctx.lineTo((x + 0.8) * s, (y + 0.74) * s);
+		}
+
+		function drawKanji6(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.5) * s, (y + 0.2) * s);
+			ctx.lineTo((x + 0.5) * s, (y + 0.37) * s);
+			ctx.moveTo((x + 0.2) * s, (y + 0.37) * s);
+			ctx.lineTo((x + 0.8) * s, (y + 0.37) * s);
+			ctx.moveTo((x + 0.39) * s, (y + 0.48) * s);
+			ctx.bezierCurveTo(
+				(x + 0.35) * s,
+				(y + 0.62) * s,
+				(x + 0.32) * s,
+				(y + 0.65) * s,
+				(x + 0.22) * s,
+				(y + 0.77) * s,
+			);
+			ctx.moveTo((x + 0.61) * s, (y + 0.48) * s);
+			ctx.bezierCurveTo(
+				(x + 0.65) * s,
+				(y + 0.62) * s,
+				(x + 0.68) * s,
+				(y + 0.65) * s,
+				(x + 0.78) * s,
+				(y + 0.77) * s,
+			);
+		}
+
+		function drawKanji7(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.2) * s, (y + 0.47) * s);
+			ctx.lineTo((x + 0.8) * s, (y + 0.36) * s);
+			ctx.moveTo((x + 0.4) * s, (y + 0.2) * s);
+			ctx.lineTo((x + 0.4) * s, (y + 0.65) * s);
+			ctx.bezierCurveTo(
+				(x + 0.4) * s,
+				(y + 0.72) * s,
+				(x + 0.45) * s,
+				(y + 0.74) * s,
+				(x + 0.55) * s,
+				(y + 0.74) * s,
+			);
+			ctx.bezierCurveTo(
+				(x + 0.65) * s,
+				(y + 0.74) * s,
+				(x + 0.73) * s,
+				(y + 0.74) * s,
+				(x + 0.73) * s,
+				(y + 0.59) * s,
+			);
+		}
+
+		function drawKanji8(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.39) * s, (y + 0.35) * s);
+			ctx.bezierCurveTo(
+				(x + 0.37) * s,
+				(y + 0.55) * s,
+				(x + 0.31) * s,
+				(y + 0.65) * s,
+				(x + 0.21) * s,
+				(y + 0.75) * s,
+			);
+			ctx.moveTo((x + 0.36) * s, (y + 0.26) * s);
+			ctx.lineTo((x + 0.59) * s, (y + 0.26) * s);
+			ctx.bezierCurveTo(
+				(x + 0.59) * s,
+				(y + 0.5) * s,
+				(x + 0.69) * s,
+				(y + 0.65) * s,
+				(x + 0.79) * s,
+				(y + 0.75) * s,
+			);
+		}
+
+		function drawKanji9(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.44) * s, (y + 0.2) * s);
+			ctx.bezierCurveTo(
+				(x + 0.44) * s,
+				(y + 0.55) * s,
+				(x + 0.4) * s,
+				(y + 0.64) * s,
+				(x + 0.21) * s,
+				(y + 0.76) * s,
+			);
+			ctx.moveTo((x + 0.21) * s, (y + 0.38) * s);
+			ctx.lineTo((x + 0.63) * s, (y + 0.38) * s);
+			ctx.lineTo((x + 0.63) * s, (y + 0.69) * s);
+			ctx.bezierCurveTo(
+				(x + 0.63) * s,
+				(y + 0.75) * s,
+				(x + 0.68) * s,
+				(y + 0.75) * s,
+				(x + 0.71) * s,
+				(y + 0.75) * s,
+			);
+			ctx.bezierCurveTo(
+				(x + 0.76) * s,
+				(y + 0.75) * s,
+				(x + 0.79) * s,
+				(y + 0.73) * s,
+				(x + 0.79) * s,
+				(y + 0.62) * s,
+			);
+		}
+
+		function drawKanji10(x: number, y: number)
+		{
+			ctx.moveTo((x + 0.5) * s, (y + 0.2) * s);
+			ctx.lineTo((x + 0.5) * s, (y + 0.8) * s);
+			ctx.moveTo((x + 0.2) * s, (y + 0.5) * s);
+			ctx.lineTo((x + 0.8) * s, (y + 0.5) * s);
 		}
 	}
 
@@ -307,5 +581,71 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 			`color(from ${colour} srgb calc(r * 0.75) calc(g * 0.75) calc(b * 0.75))`,
 		);
 		return gradient;
+	}
+
+	function getCoordSides(): { top: boolean; bottom: boolean; left: boolean; right: boolean; }
+	{
+		switch (fullStyle.coordsLocation)
+		{
+			case "all":
+				return { top: true, bottom: true, left: true, right: true };
+			case "none":
+				return { top: false, bottom: false, left: false, right: false };
+			case "top-left":
+				return { top: true, bottom: false, left: true, right: false };
+			case "bottom-left":
+				return { top: false, bottom: true, left: true, right: false };
+			case "top-right":
+				return { top: true, bottom: false, left: false, right: true };
+			case "bottom-right":
+				return { top: false, bottom: true, left: false, right: true };
+		}
+	}
+
+	function getCoordLabels(): [Coord, string][]
+	{
+		let xLabels;
+		let yLabels;
+		switch (fullStyle.coords)
+		{
+			case "A1":
+				xLabels = "ABCDEFGHJKLMNOPQRSTUVWXYZ".slice(0, contents.width).split("").slice(0, contents.width);
+				yLabels = Array.from({ length: contents.height }, (_, i) => (i + 1).toString()).reverse();
+				break;
+			case "kanji":
+				xLabels = Array.from({ length: contents.width }, (_, i) => (i + 1).toString());
+				yLabels = [
+					"kanji1",
+					"kanji2",
+					"kanji3",
+					"kanji4",
+					"kanji5",
+					"kanji6",
+					"kanji7",
+					"kanji8",
+					"kanji9",
+					"kanji10",
+					"kanji11",
+					"kanji12",
+					"kanji13",
+					"kanji14",
+					"kanji15",
+					"kanji16",
+					"kanji17",
+					"kanji18",
+					"kanji19",
+				].slice(0, contents.height);
+				break;
+		}
+		const labels: [Coord, string][] = [];
+		if (coordSides.top)
+			labels.push(...xLabels.map((label, i) => [[i, -1], label] satisfies [Coord, string]));
+		if (coordSides.bottom)
+			labels.push(...xLabels.map((label, i) => [[i, contents.height], label] satisfies [Coord, string]));
+		if (coordSides.left)
+			labels.push(...yLabels.map((label, i) => [[-1, i], label] satisfies [Coord, string]));
+		if (coordSides.right)
+			labels.push(...yLabels.map((label, i) => [[contents.width, i], label] satisfies [Coord, string]));
+		return labels;
 	}
 }
