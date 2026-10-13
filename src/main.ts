@@ -835,6 +835,183 @@ function demo1()
 		},
 		policy: policy1,
 		policyQuality: policy1.map((_, i) => (policy2[i] / policy1[i] - 1) * 2),
+		moves: [
+			{
+				move: [8, 9],
+				order: 0,
+				visits: 1995,
+				winrate: 0.990995851,
+				scoreLead: 12.114046,
+				playSelectionValue: 11313.5718,
+			},
+			{
+				move: [10, 9],
+				order: 1,
+				visits: 2531,
+				winrate: 0.989736052,
+				scoreLead: 14.2400955,
+				playSelectionValue: 7674.23012,
+			},
+			{
+				move: [9, 9],
+				order: 2,
+				visits: 534,
+				winrate: 0.974213702,
+				scoreLead: 9.27495516,
+				playSelectionValue: 310,
+			},
+			{
+				move: [7, 7],
+				order: 3,
+				visits: 465,
+				winrate: 0.979307601,
+				scoreLead: 10.9237713,
+				playSelectionValue: 72,
+			},
+			{
+				move: [8, 8],
+				order: 4,
+				visits: 834,
+				winrate: 0.988691872,
+				scoreLead: 11.2192437,
+				playSelectionValue: 68,
+			},
+			{
+				move: [11, 9],
+				order: 5,
+				visits: 95,
+				winrate: 0.959702487,
+				scoreLead: 8.50676634,
+				playSelectionValue: 62,
+			},
+			{
+				move: [10, 7],
+				order: 6,
+				visits: 103,
+				winrate: 0.93181311,
+				scoreLead: 6.91362262,
+				playSelectionValue: 56,
+			},
+			{
+				move: [6, 8],
+				order: 7,
+				visits: 337,
+				winrate: 0.986579886,
+				scoreLead: 10.1483979,
+				playSelectionValue: 12,
+			},
+			{ move: [4, 6], order: 8, visits: 366, winrate: 0.988152459, scoreLead: 11.5489099, playSelectionValue: 8 },
+			{ move: [9, 7], order: 9, visits: 32, winrate: 0.95303818, scoreLead: 8.01450876, playSelectionValue: 8 },
+			{ move: [8, 5], order: 10, visits: 66, winrate: 0.976788986, scoreLead: 8.9316964, playSelectionValue: 4 },
+			{
+				move: [2, 7],
+				order: 11,
+				visits: 318,
+				winrate: 0.980769025,
+				scoreLead: 10.4254881,
+				playSelectionValue: 3,
+			},
+			{ move: [3, 6], order: 12, visits: 590, winrate: 0.986114259, scoreLead: 11.431547, playSelectionValue: 2 },
+			{
+				move: [4, 5],
+				order: 13,
+				visits: 322,
+				winrate: 0.987511004,
+				scoreLead: 11.3273128,
+				playSelectionValue: 2,
+			},
+			{ move: [3, 7], order: 14, visits: 363, winrate: 0.98459025, scoreLead: 10.7050261, playSelectionValue: 1 },
+			{
+				move: [3, 14],
+				order: 15,
+				visits: 224,
+				winrate: 0.983748121,
+				scoreLead: 10.7095493,
+				playSelectionValue: 1,
+			},
+			{
+				move: [12, 11],
+				order: 16,
+				visits: 210,
+				winrate: 0.97819353,
+				scoreLead: 9.84385463,
+				playSelectionValue: 1,
+			},
+			{
+				move: [1, 6],
+				order: 17,
+				visits: 189,
+				winrate: 0.978411474,
+				scoreLead: 10.1930148,
+				playSelectionValue: 1,
+			},
+			{ move: [3, 8], order: 18, visits: 156, winrate: 0.97832713, scoreLead: 9.44772259, playSelectionValue: 1 },
+			{ move: [8, 7], order: 19, visits: 33, winrate: 0.964377161, scoreLead: 8.25486377, playSelectionValue: 1 },
+			{
+				move: [2, 15],
+				order: 20,
+				visits: 93,
+				winrate: 0.980527302,
+				scoreLead: 10.3687917,
+				playSelectionValue: 0,
+			},
+			{ move: [7, 8], order: 21, visits: 73, winrate: 0.979565875, scoreLead: 9.1480112, playSelectionValue: 0 },
+			{ move: [7, 5], order: 22, visits: 23, winrate: 0.956507977, scoreLead: 8.17632043, playSelectionValue: 0 },
+			{ move: [5, 9], order: 23, visits: 10, winrate: 0.960288569, scoreLead: 8.65892701, playSelectionValue: 0 },
+			{ move: [7, 6], order: 24, visits: 8, winrate: 0.955899845, scoreLead: 8.26400707, playSelectionValue: 0 },
+			{ move: [6, 3], order: 25, visits: 4, winrate: 0.946912416, scoreLead: 7.41550219, playSelectionValue: 0 },
+			{ move: [13, 11], order: 26, visits: 3, winrate: 0.95542886, scoreLead: 6.94393149, playSelectionValue: 0 },
+			{ move: [6, 9], order: 27, visits: 3, winrate: 0.947835732, scoreLead: 7.18072076, playSelectionValue: 0 },
+			{ move: [3, 16], order: 28, visits: 2, winrate: 0.949489857, scoreLead: 6.84934286, playSelectionValue: 0 },
+			{ move: [7, 10], order: 29, visits: 1, winrate: 0.924434468, scoreLead: 7.27558804, playSelectionValue: 0 },
+			{
+				move: [14, 11],
+				order: 30,
+				visits: 1,
+				winrate: 0.923523821,
+				scoreLead: 6.22506857,
+				playSelectionValue: 0,
+			},
+			{ move: [9, 10], order: 31, visits: 1, winrate: 0.895014308, scoreLead: 7.87095308, playSelectionValue: 0 },
+			{ move: [8, 6], order: 32, visits: 1, winrate: 0.839296669, scoreLead: 4.24900198, playSelectionValue: 0 },
+			{ move: [2, 16], order: 33, visits: 1, winrate: 0.831664585, scoreLead: 4.0883112, playSelectionValue: 0 },
+			{ move: [3, 5], order: 34, visits: 1, winrate: 0.935231853, scoreLead: 6.98796701, playSelectionValue: 0 },
+			{ move: [8, 11], order: 35, visits: 1, winrate: 0.882552765, scoreLead: 5.30364466, playSelectionValue: 0 },
+			{ move: [2, 5], order: 36, visits: 1, winrate: 0.872107595, scoreLead: 5.20852327, playSelectionValue: 0 },
+			{
+				move: [15, 11],
+				order: 37,
+				visits: 1,
+				winrate: 0.885524798,
+				scoreLead: 4.85488176,
+				playSelectionValue: 0,
+			},
+			{ move: [4, 4], order: 38, visits: 1, winrate: 0.922488164, scoreLead: 6.01981163, playSelectionValue: 0 },
+			{ move: [1, 7], order: 39, visits: 1, winrate: 0.903161116, scoreLead: 6.01289701, playSelectionValue: 0 },
+			{ move: [7, 11], order: 40, visits: 1, winrate: 0.881307941, scoreLead: 5.14865303, playSelectionValue: 0 },
+			{ move: [8, 12], order: 41, visits: 1, winrate: 0.920807026, scoreLead: 6.17607927, playSelectionValue: 0 },
+			{
+				move: [12, 12],
+				order: 42,
+				visits: 1,
+				winrate: 0.882593408,
+				scoreLead: 4.71753645,
+				playSelectionValue: 0,
+			},
+			{
+				move: [11, 11],
+				order: 43,
+				visits: 1,
+				winrate: 0.860389709,
+				scoreLead: 4.93714142,
+				playSelectionValue: 0,
+			},
+			{ move: [6, 12], order: 44, visits: 1, winrate: 0.912470937, scoreLead: 5.96043587, playSelectionValue: 0 },
+			{ move: [16, 5], order: 45, visits: 1, winrate: 0.900565721, scoreLead: 5.47493172, playSelectionValue: 0 },
+			{ move: [9, 11], order: 46, visits: 1, winrate: 0.877960317, scoreLead: 5.27814388, playSelectionValue: 0 },
+			{ move: [9, 5], order: 47, visits: 1, winrate: 0.755349919, scoreLead: 2.8290987, playSelectionValue: 0 },
+			{ move: [14, 7], order: 48, visits: 1, winrate: 0.822510511, scoreLead: 3.50785017, playSelectionValue: 0 },
+		],
 	});
 }
 
@@ -922,6 +1099,29 @@ function randomDemo()
 				(Math.random() * 3 - 1.5) * Math.random());
 		}
 	}
+	if (Math.random() < 0.5)
+	{
+		const moves = new Map();
+		while (moves.size <= Math.random() * contents.width * contents.height)
+		{
+			const x = Math.floor(Math.random() * contents.width);
+			const y = Math.floor(Math.random() * contents.height);
+			if (!stones.has(`${x},${y}`) && !moves.has(`${x},${y}`))
+			{
+				moves.set(`${x},${y}`, {
+					move: [x, y],
+					order: 0,
+					playSelectionValue: Math.exp(Math.random() * 30),
+					winrate: Math.random(),
+					scoreLead: (Math.random() - 0.5) ** 4 * 361,
+					visits: Math.floor(Math.exp(Math.random() * 30)),
+				});
+			}
+		}
+		contents.moves = [...moves.values()];
+		contents.moves.sort((a, b) => b.playSelectionValue - a.playSelectionValue);
+		contents.moves.forEach((move, index) => move.order = index);
+	}
 
 	const style: Partial<BoardStyle> = {};
 	if (Math.random() < 0.5)
@@ -950,7 +1150,7 @@ function randomDemo()
 		style.coords = "kanji";
 	style.coordsLocation = coordLocations[Math.floor(Math.random() * coordLocations.length)];
 	if (Math.random() < 0.1)
-		style.fontFace = "Comic Sans MS";
+		style.fontFamily = "Comic Sans MS";
 
 	drawBoard(canvas, contents, style);
 

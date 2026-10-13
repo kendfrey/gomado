@@ -8,6 +8,17 @@ export interface BoardContents
 	labels?: [Coord, string][];
 	policy?: number[];
 	policyQuality?: number[];
+	moves?: AnalysisMove[];
+}
+
+export interface AnalysisMove
+{
+	move: Coord;
+	order: number;
+	visits: number;
+	winrate: number;
+	scoreLead: number;
+	playSelectionValue: number;
 }
 
 export interface BoardStyle
@@ -20,7 +31,8 @@ export interface BoardStyle
 	margin: number;
 	coords: "A1" | "kanji";
 	coordsLocation: "all" | "none" | "top-left" | "bottom-left" | "top-right" | "bottom-right";
-	fontFace: string;
+	fontFamily: string;
+	moveStatsThreshold: number;
 }
 
 const defaultStyle: BoardStyle = {
@@ -32,7 +44,8 @@ const defaultStyle: BoardStyle = {
 	margin: 0.1,
 	coords: "A1",
 	coordsLocation: "all",
-	fontFace: "Arial, Helvetica, sans-serif",
+	fontFamily: "Arial, Helvetica, sans-serif",
+	moveStatsThreshold: 0.1,
 };
 
 const boardContentsCache: WeakMap<HTMLCanvasElement, [BoardContents, Partial<BoardStyle> | undefined]> = new WeakMap();
@@ -92,6 +105,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	drawStones();
 	drawLabels();
 	drawPolicy();
+	drawMoves();
 	return;
 
 	function drawBackground()
@@ -213,7 +227,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		ctx.textAlign = "center";
 		ctx.textBaseline = "top";
 		ctx.lineWidth = s * 0.075;
-		ctx.font = `bold ${s * 0.7}px ${fullStyle.fontFace}`;
+		ctx.font = `bold ${s * 0.7}px ${fullStyle.fontFamily}`;
 		for (const [[x, y], label] of (contents.labels ?? []).concat(getCoordLabels()))
 		{
 			const stoneColour = stones.get(`${x},${y}`);
@@ -544,6 +558,40 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		}
 	}
 
+	function drawMoves()
+	{
+		if (!contents.moves)
+			return;
+
+		const maxPSV = contents.moves.find(m => m.order === 0)?.playSelectionValue ?? 0;
+		if (maxPSV <= 0)
+			return;
+
+		ctx.lineWidth = s * 0.075;
+		ctx.fillStyle = fullStyle.lineColour;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.font = `${s * 0.3}px ${fullStyle.fontFamily}`;
+		for (const move of contents.moves)
+		{
+			const [x, y] = move.move;
+			const quality = Math.max(0, Math.log(move.playSelectionValue)) / Math.log(maxPSV);
+			ctx.strokeStyle = move.order === 0
+				? "#00ffff"
+				: `oklch(${0.4 + quality * 0.4} 0.3 ${70 + quality * 70} / ${0.1 + quality * 0.9})`;
+			ctx.beginPath();
+			ctx.arc((x + 0.5) * s, (y + 0.5) * s, (s - ctx.lineWidth) * 0.5, 0, 2 * Math.PI);
+			ctx.closePath();
+			ctx.stroke();
+			if (quality > fullStyle.moveStatsThreshold)
+			{
+				ctx.fillText((move.winrate * 100).toFixed(1), (x + 0.5) * s, (y + 0.25) * s);
+				ctx.fillText(move.scoreLead.toFixed(1), (x + 0.5) * s, (y + 0.5) * s);
+				ctx.fillText(abbreviateNumber(move.visits), (x + 0.5) * s, (y + 0.75) * s);
+			}
+		}
+	}
+
 	function getStarPoints(): Coord[]
 	{
 		const starPoints: Coord[] = [];
@@ -674,5 +722,18 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		if (coordSides.right)
 			labels.push(...yLabels.map((label, i) => [[contents.width, i], label] satisfies [Coord, string]));
 		return labels;
+	}
+
+	function abbreviateNumber(value: number): string
+	{
+		let magnitudes = 0;
+		while (value >= 1000)
+		{
+			value /= 1000;
+			magnitudes++;
+		}
+		const suffixes = ["", "k", "m", "b", "t", "?"];
+		return (value >= 10 || magnitudes === 0 ? Math.floor(value).toFixed() : value.toFixed(1))
+			+ suffixes[Math.min(suffixes.length - 1, magnitudes)];
 	}
 }
