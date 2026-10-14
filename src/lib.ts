@@ -4,7 +4,7 @@ export interface BoardContents
 {
 	width: number;
 	height: number;
-	stones: Record<string, Coord[]>;
+	stones: [Coord, string][];
 	labels?: [Coord, string][];
 	policy?: number[];
 	policyQuality?: number[];
@@ -97,7 +97,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	ctx.clip();
 
 	const stones = new Map<string, string>(
-		Object.entries(contents.stones).flatMap(([colour, coords]) => coords.map(([x, y]) => [`${x},${y}`, colour])),
+		contents.stones.map(([[x, y], colour]) => [`${x},${y}`, colour]),
 	);
 
 	drawBackground();
@@ -174,15 +174,12 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	{
 		drawShadows();
 
-		for (const [colour, stones] of Object.entries(contents.stones))
+		for (const [[x, y], colour] of contents.stones)
 		{
-			for (const [x, y] of stones)
-			{
-				ctx.fillStyle = shineGradient(colour, x, y);
-				ctx.beginPath();
-				ctx.arc((x + 0.5) * s, (y + 0.5) * s, s * 0.5, 0, Math.PI * 2);
-				ctx.fill();
-			}
+			ctx.fillStyle = shineGradient(colour, x, y);
+			ctx.beginPath();
+			ctx.arc((x + 0.5) * s, (y + 0.5) * s, s * 0.5, 0, Math.PI * 2);
+			ctx.fill();
 		}
 	}
 
@@ -191,32 +188,29 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		ctx.save();
 		ctx.globalCompositeOperation = "multiply";
 
-		for (const [colour, stones] of Object.entries(contents.stones))
+		for (const [[x, y], colour] of contents.stones)
 		{
-			for (const [x, y] of stones)
-			{
-				const gradient = ctx.createRadialGradient(
-					(x + 0.55) * s,
-					(y + 0.55) * s,
-					s * 0.3,
-					(x + 0.55) * s,
-					(y + 0.55) * s,
-					s * 0.6,
-				);
-				gradient.addColorStop(
-					0,
-					`color(from ${colour} srgb calc(r * 0.5) calc(g * 0.5) calc(b * 0.5))`,
-				);
-				gradient.addColorStop(
-					0.7,
-					`color(from ${colour} srgb calc(r * 0.1 + 0.8) calc(g * 0.1 + 0.8) calc(b * 0.1 + 0.8))`,
-				);
-				gradient.addColorStop(1, "#ffffff");
-				ctx.fillStyle = gradient;
-				ctx.beginPath();
-				ctx.arc((x + 0.55) * s, (y + 0.55) * s, s * 0.6, 0, Math.PI * 2);
-				ctx.fill();
-			}
+			const gradient = ctx.createRadialGradient(
+				(x + 0.55) * s,
+				(y + 0.55) * s,
+				s * 0.3,
+				(x + 0.55) * s,
+				(y + 0.55) * s,
+				s * 0.6,
+			);
+			gradient.addColorStop(
+				0,
+				`color(from ${colour} srgb calc(r * 0.5) calc(g * 0.5) calc(b * 0.5))`,
+			);
+			gradient.addColorStop(
+				0.7,
+				`color(from ${colour} srgb calc(r * 0.1 + 0.8) calc(g * 0.1 + 0.8) calc(b * 0.1 + 0.8))`,
+			);
+			gradient.addColorStop(1, "#ffffff");
+			ctx.fillStyle = gradient;
+			ctx.beginPath();
+			ctx.arc((x + 0.55) * s, (y + 0.55) * s, s * 0.6, 0, Math.PI * 2);
+			ctx.fill();
 		}
 
 		ctx.restore();

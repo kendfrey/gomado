@@ -749,90 +749,86 @@ function demo1()
 	drawBoard(canvas, {
 		width: 19,
 		height: 19,
-		stones: {
-			black: [
-				[2, 3],
-				[2, 10],
-				[2, 13],
-				[3, 2],
-				[3, 10],
-				[4, 3],
-				[4, 9],
-				[4, 15],
-				[5, 2],
-				[5, 7],
-				[5, 8],
-				[5, 10],
-				[6, 5],
-				[6, 6],
-				[7, 2],
-				[7, 3],
-				[7, 4],
-				[7, 9],
-				[8, 16],
-				[9, 8],
-				[10, 10],
-				[11, 5],
-				[11, 7],
-				[11, 8],
-				[12, 3],
-				[12, 4],
-				[12, 6],
-				[12, 7],
-				[12, 15],
-				[13, 1],
-				[13, 2],
-				[13, 3],
-				[13, 8],
-				[13, 9],
-				[13, 16],
-				[14, 9],
-				[14, 15],
-				[15, 3],
-				[15, 9],
-			],
-			white: [
-				[1, 9],
-				[1, 15],
-				[2, 6],
-				[2, 9],
-				[3, 9],
-				[3, 15],
-				[4, 2],
-				[4, 7],
-				[4, 8],
-				[4, 14],
-				[5, 3],
-				[5, 5],
-				[5, 6],
-				[5, 15],
-				[5, 16],
-				[6, 4],
-				[6, 7],
-				[8, 3],
-				[8, 10],
-				[9, 6],
-				[10, 8],
-				[11, 2],
-				[12, 2],
-				[12, 5],
-				[12, 8],
-				[12, 9],
-				[12, 10],
-				[13, 4],
-				[13, 5],
-				[13, 6],
-				[13, 7],
-				[14, 8],
-				[14, 16],
-				[15, 8],
-				[15, 14],
-				[15, 16],
-				[16, 8],
-				[16, 9],
-				[16, 15],
-			],
-		},
+		stones: [
+			[[2, 3], "black"],
+			[[2, 10], "black"],
+			[[2, 13], "black"],
+			[[3, 2], "black"],
+			[[3, 10], "black"],
+			[[4, 3], "black"],
+			[[4, 9], "black"],
+			[[4, 15], "black"],
+			[[5, 2], "black"],
+			[[5, 7], "black"],
+			[[5, 8], "black"],
+			[[5, 10], "black"],
+			[[6, 5], "black"],
+			[[6, 6], "black"],
+			[[7, 2], "black"],
+			[[7, 3], "black"],
+			[[7, 4], "black"],
+			[[7, 9], "black"],
+			[[8, 16], "black"],
+			[[9, 8], "black"],
+			[[10, 10], "black"],
+			[[11, 5], "black"],
+			[[11, 7], "black"],
+			[[11, 8], "black"],
+			[[12, 3], "black"],
+			[[12, 4], "black"],
+			[[12, 6], "black"],
+			[[12, 7], "black"],
+			[[12, 15], "black"],
+			[[13, 1], "black"],
+			[[13, 2], "black"],
+			[[13, 3], "black"],
+			[[13, 8], "black"],
+			[[13, 9], "black"],
+			[[13, 16], "black"],
+			[[14, 9], "black"],
+			[[14, 15], "black"],
+			[[15, 3], "black"],
+			[[15, 9], "black"],
+			[[1, 9], "white"],
+			[[1, 15], "white"],
+			[[2, 6], "white"],
+			[[2, 9], "white"],
+			[[3, 9], "white"],
+			[[3, 15], "white"],
+			[[4, 2], "white"],
+			[[4, 7], "white"],
+			[[4, 8], "white"],
+			[[4, 14], "white"],
+			[[5, 3], "white"],
+			[[5, 5], "white"],
+			[[5, 6], "white"],
+			[[5, 15], "white"],
+			[[5, 16], "white"],
+			[[6, 4], "white"],
+			[[6, 7], "white"],
+			[[8, 3], "white"],
+			[[8, 10], "white"],
+			[[9, 6], "white"],
+			[[10, 8], "white"],
+			[[11, 2], "white"],
+			[[12, 2], "white"],
+			[[12, 5], "white"],
+			[[12, 8], "white"],
+			[[12, 9], "white"],
+			[[12, 10], "white"],
+			[[13, 4], "white"],
+			[[13, 5], "white"],
+			[[13, 6], "white"],
+			[[13, 7], "white"],
+			[[14, 8], "white"],
+			[[14, 16], "white"],
+			[[15, 8], "white"],
+			[[15, 14], "white"],
+			[[15, 16], "white"],
+			[[16, 8], "white"],
+			[[16, 9], "white"],
+			[[16, 15], "white"],
+		],
 		policy: policy1,
 		policyQuality: policy1.map((_, i) => (policy2[i] / policy1[i] - 1) * 2),
 		moves: [
@@ -1017,7 +1013,7 @@ function demo1()
 
 function randomDemo()
 {
-	const contents: BoardContents = { width: 19, height: 19, stones: {} };
+	const contents: BoardContents = { width: 19, height: 19, stones: [] };
 	if (Math.random() < 0.5)
 	{
 		if (Math.random() < 0.5)
@@ -1039,32 +1035,32 @@ function randomDemo()
 			contents.height = Math.floor(Math.random() * 30) + 1;
 		}
 	}
+	const stoneColours = [];
 	if (Math.random() < 0.5)
-		contents.stones.black = [];
+		stoneColours.push("black");
 	if (Math.random() < 0.5)
-		contents.stones.white = [];
+		stoneColours.push("white");
 	if (Math.random() < 0.1)
-		contents.stones.red = [];
+		stoneColours.push("red");
 	if (Math.random() < 0.1)
-		contents.stones.green = [];
+		stoneColours.push("green");
 	if (Math.random() < 0.1)
-		contents.stones.blue = [];
+		stoneColours.push("blue");
 	if (Math.random() < 0.1)
-		contents.stones.yellow = [];
+		stoneColours.push("yellow");
 	if (Math.random() < 0.5)
 		contents.labels = [];
 	const stones = new Set();
-	const collections = Object.values(contents.stones);
 	const symbols = ["circle", "cross", "square", "triangle"];
 	const coordLocations = ["all", "none", "top-left", "bottom-left", "top-right", "bottom-right"] as const;
 	for (let y = 0; y < contents.height; y++)
 	{
 		for (let x = 0; x < contents.width; x++)
 		{
-			if (collections.length > 0 && Math.random() < 0.25)
+			if (stoneColours.length > 0 && Math.random() < 0.25)
 			{
-				const collection = collections[Math.floor(Math.random() * collections.length)];
-				collection.push([x, y]);
+				const colour = stoneColours[Math.floor(Math.random() * stoneColours.length)];
+				contents.stones.push([[x, y], colour]);
 				stones.add(`${x},${y}`);
 			}
 			if (contents.labels && Math.random() < 0.1)
