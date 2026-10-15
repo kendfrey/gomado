@@ -5,6 +5,9 @@ export interface BoardContents
 	width: number;
 	height: number;
 	stones: [Coord, string][];
+	lastMove?: Coord;
+	lastMoveType?: "brilliant" | "excellent" | "good" | "mistake" | "blunder";
+	nextMove?: [Coord, string];
 	labels?: [Coord, string][];
 	policy?: number[];
 	policyQuality?: number[];
@@ -103,9 +106,11 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	drawBackground();
 	drawLines();
 	drawStones();
+	drawLastMove();
 	drawLabels();
 	drawPolicy();
 	drawMoves();
+	drawNextMove();
 	return;
 
 	function drawBackground()
@@ -183,6 +188,61 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		}
 	}
 
+	function drawLastMove()
+	{
+		if (!contents.lastMove)
+			return;
+
+		const [x, y] = contents.lastMove;
+		const stone = stones.get(`${x},${y}`);
+		if (!stone)
+			return;
+
+		let colour = undefined;
+		let label = undefined;
+		switch (contents.lastMoveType)
+		{
+			case "brilliant":
+				colour = "oklch(0.6 0.2 260)";
+				label = "!!";
+				break;
+			case "excellent":
+				colour = "oklch(0.6 0.2 200)";
+				label = "!";
+				break;
+			case "good":
+				colour = "oklch(0.6 0.2 140)";
+				label = "-";
+				break;
+			case "mistake":
+				colour = "oklch(0.6 0.2 80)";
+				label = "?";
+				break;
+			case "blunder":
+				colour = "oklch(0.6 0.2 20)";
+				label = "??";
+				break;
+		}
+		ctx.fillStyle = colour ? shineGradient(colour, x, y) : getContrastColour(x, y);
+		ctx.beginPath();
+		ctx.arc((x + 0.5) * s, (y + 0.5) * s, s * 0.25, 0, Math.PI * 2);
+		ctx.fill();
+
+		if (label)
+		{
+			ctx.fillStyle = shineGradient("#ffffff", x, y);
+			ctx.textAlign = "center";
+			ctx.textBaseline = "top";
+			ctx.font = `bold ${s * 0.35}px ${fullStyle.fontFamily}`;
+			const metrics = ctx.measureText(label);
+			ctx.fillText(
+				label,
+				(x + 0.5) * s,
+				(y + 0.5) * s - (metrics.actualBoundingBoxDescent - metrics.actualBoundingBoxAscent) * 0.5,
+			);
+		}
+	}
+
 	function drawShadows()
 	{
 		ctx.save();
@@ -224,10 +284,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		ctx.font = `bold ${s * 0.7}px ${fullStyle.fontFamily}`;
 		for (const [[x, y], label] of (contents.labels ?? []).concat(getCoordLabels()))
 		{
-			const stoneColour = stones.get(`${x},${y}`);
-			const labelColour = stoneColour !== undefined
-				? shineGradient(`oklch(from ${stoneColour} calc(max(0, min(1, (l - 0.5) * -infinity))) 0 0)`, x, y)
-				: fullStyle.lineColour;
+			const labelColour = getContrastColour(x, y);
 			ctx.strokeStyle = labelColour;
 			ctx.fillStyle = labelColour;
 			switch (label)
@@ -318,12 +375,15 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 					drawKanjiLabel2(drawKanji9, x, y);
 					break;
 				default:
+				{
+					const metrics = ctx.measureText(label);
 					ctx.fillText(
 						label,
 						(x + 0.5) * s,
-						(y + 0.5) * s - ctx.measureText(label).actualBoundingBoxDescent * 0.5,
+						(y + 0.5) * s - (metrics.actualBoundingBoxDescent - metrics.actualBoundingBoxAscent) * 0.5,
 					);
 					break;
+				}
 			}
 		}
 
@@ -543,7 +603,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 				ctx.arc((x + 0.5) * s, (y + 0.5) * s, Math.sqrt(contents.policy[i]) * s * 0.5, 0, 2 * Math.PI);
 				ctx.closePath();
 				const quality = Math.max(-1, Math.min(1, contents.policyQuality?.[i] ?? 0));
-				ctx.fillStyle = `oklch(0.75 0.25 ${140 + quality * 140})`;
+				ctx.fillStyle = `oklch(0.75 0.2 ${140 + quality * 140})`;
 				ctx.strokeStyle = fullStyle.lineColour;
 				ctx.lineWidth = 0.5 * devicePixelRatio;
 				ctx.fill();
@@ -561,7 +621,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		if (maxPSV <= 0)
 			return;
 
-		ctx.lineWidth = s * 0.075;
+		ctx.lineWidth = s * 0.15;
 		ctx.fillStyle = fullStyle.lineColour;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
@@ -570,9 +630,20 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		{
 			const [x, y] = move.move;
 			const quality = Math.max(0, Math.log(move.playSelectionValue)) / Math.log(maxPSV);
-			ctx.strokeStyle = move.order === 0
+			const colour = move.order === 0
 				? "#00ffff"
 				: `oklch(${0.4 + quality * 0.4} 0.3 ${70 + quality * 70} / ${0.1 + quality * 0.9})`;
+			const gradient = ctx.createRadialGradient(
+				(x + 0.5) * s,
+				(y + 0.5) * s,
+				s * 0.5,
+				(x + 0.5) * s,
+				(y + 0.5) * s,
+				s * 0.5 - ctx.lineWidth,
+			);
+			gradient.addColorStop(0, colour);
+			gradient.addColorStop(1, `rgb(from ${colour} r g b / 0)`);
+			ctx.strokeStyle = gradient;
 			ctx.beginPath();
 			ctx.arc((x + 0.5) * s, (y + 0.5) * s, (s - ctx.lineWidth) * 0.5, 0, 2 * Math.PI);
 			ctx.closePath();
@@ -584,6 +655,23 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 				ctx.fillText(abbreviateNumber(move.visits), (x + 0.5) * s, (y + 0.75) * s);
 			}
 		}
+	}
+
+	function drawNextMove()
+	{
+		if (!contents.nextMove)
+			return;
+
+		const [[x, y], colour] = contents.nextMove;
+		ctx.lineWidth = s * 0.05;
+		ctx.strokeStyle = colour;
+		const r = (s - ctx.lineWidth) * 0.5;
+		ctx.setLineDash([r * Math.PI * 0.0625, r * Math.PI * 0.0625]);
+		ctx.beginPath();
+		ctx.arc((x + 0.5) * s, (y + 0.5) * s, r, 0, Math.PI * 2);
+		ctx.closePath();
+		ctx.stroke();
+		ctx.setLineDash([]);
 	}
 
 	function getStarPoints(): Coord[]
@@ -629,6 +717,14 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 			}
 		}
 		return starPoints;
+	}
+
+	function getContrastColour(x: number, y: number): string | CanvasGradient
+	{
+		const stoneColour = stones.get(`${x},${y}`);
+		return stoneColour !== undefined
+			? shineGradient(`oklch(from ${stoneColour} calc(max(0, min(1, (l - 0.5) * -infinity))) 0 0)`, x, y)
+			: fullStyle.lineColour;
 	}
 
 	function shineGradient(colour: string, x: number, y: number)

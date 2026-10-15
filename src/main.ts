@@ -829,6 +829,9 @@ function demo1()
 			[[16, 9], "white"],
 			[[16, 15], "white"],
 		],
+		lastMove: [10, 8],
+		lastMoveType: "brilliant",
+		nextMove: [[9, 9], "black"],
 		policy: policy1,
 		policyQuality: policy1.map((_, i) => (policy2[i] / policy1[i] - 1) * 2),
 		moves: [
@@ -1052,7 +1055,7 @@ function randomDemo()
 		contents.labels = [];
 	const stones = new Set();
 	const symbols = ["circle", "cross", "square", "triangle"];
-	const coordLocations = ["all", "none", "top-left", "bottom-left", "top-right", "bottom-right"] as const;
+	const moveTypes = ["brilliant", "excellent", "good", "mistake", "blunder"] as const;
 	for (let y = 0; y < contents.height; y++)
 	{
 		for (let x = 0; x < contents.width; x++)
@@ -1095,6 +1098,24 @@ function randomDemo()
 				(Math.random() * 3 - 1.5) * Math.random());
 		}
 	}
+	if (contents.stones.length > 0)
+	{
+		const [coord, _] = contents.stones[Math.floor(Math.random() * contents.stones.length)];
+		contents.lastMove = coord;
+		if (Math.random() < 0.5)
+			contents.lastMoveType = moveTypes[Math.floor(Math.random() * moveTypes.length)];
+
+		for (let i = 0; i < 10; i++)
+		{
+			const x = Math.floor(Math.random() * contents.width);
+			const y = Math.floor(Math.random() * contents.height);
+			if (!stones.has(`${x},${y}`))
+			{
+				contents.nextMove = [[x, y], stoneColours[Math.floor(Math.random() * stoneColours.length)]];
+				break;
+			}
+		}
+	}
 	if (Math.random() < 0.5)
 	{
 		const moves = new Map();
@@ -1120,6 +1141,7 @@ function randomDemo()
 	}
 
 	const style: Partial<BoardStyle> = {};
+	const coordLocations = ["all", "none", "top-left", "bottom-left", "top-right", "bottom-right"] as const;
 	if (Math.random() < 0.5)
 		style.backgroundColour = randomColour();
 	if (Math.random() < 0.5)
@@ -1148,6 +1170,7 @@ function randomDemo()
 	if (Math.random() < 0.1)
 		style.fontFamily = "Comic Sans MS";
 
+	console.log(contents, style);
 	drawBoard(canvas, contents, style);
 
 	function randomColour()
