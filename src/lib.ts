@@ -9,6 +9,8 @@ export interface BoardContents
 	lastMoveType?: "brilliant" | "excellent" | "good" | "mistake" | "blunder";
 	nextMove?: [Coord, string];
 	labels?: [Coord, string][];
+	lines?: [Coord, Coord][];
+	arrows?: [Coord, Coord][];
 	policy?: number[];
 	policyQuality?: number[];
 	moves?: AnalysisMove[];
@@ -107,8 +109,9 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	drawLines();
 	drawStones();
 	drawLastMove();
-	drawLabels();
 	drawPolicy();
+	drawLabels();
+	drawMarkupLines();
 	drawMoves();
 	drawNextMove();
 	return;
@@ -588,6 +591,46 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		}
 	}
 
+	function drawMarkupLines()
+	{
+		ctx.fillStyle = fullStyle.lineColour;
+		ctx.strokeStyle = fullStyle.lineColour;
+		ctx.lineWidth = s * 0.075;
+		ctx.lineCap = "round";
+		if (contents.lines)
+		{
+			for (const [[x1, y1], [x2, y2]] of contents.lines)
+			{
+				ctx.beginPath();
+				ctx.moveTo((x1 + 0.5) * s, (y1 + 0.5) * s);
+				ctx.lineTo((x2 + 0.5) * s, (y2 + 0.5) * s);
+				ctx.stroke();
+			}
+		}
+		if (contents.arrows)
+		{
+			for (const [[x1, y1], [x2, y2]] of contents.arrows)
+			{
+				const angle = Math.atan2(y2 - y1, x2 - x1);
+				ctx.beginPath();
+				ctx.moveTo((x2 + 0.5) * s, (y2 + 0.5) * s);
+				ctx.lineTo(
+					(x2 + 0.5 - Math.cos(angle - Math.PI / 6) * 0.3) * s,
+					(y2 + 0.5 - Math.sin(angle - Math.PI / 6) * 0.3) * s,
+				);
+				ctx.lineTo(
+					(x2 + 0.5 - Math.cos(angle + Math.PI / 6) * 0.3) * s,
+					(y2 + 0.5 - Math.sin(angle + Math.PI / 6) * 0.3) * s,
+				);
+				ctx.fill();
+				ctx.beginPath();
+				ctx.moveTo((x1 + 0.5) * s, (y1 + 0.5) * s);
+				ctx.lineTo((x2 + 0.5 - Math.cos(angle) * 0.2) * s, (y2 + 0.5 - Math.sin(angle) * 0.2) * s);
+				ctx.stroke();
+			}
+		}
+	}
+
 	function drawPolicy()
 	{
 		if (!contents.policy)
@@ -665,6 +708,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		const [[x, y], colour] = contents.nextMove;
 		ctx.lineWidth = s * 0.05;
 		ctx.strokeStyle = colour;
+		ctx.lineCap = "butt";
 		const r = (s - ctx.lineWidth) * 0.5;
 		ctx.setLineDash([r * Math.PI * 0.0625, r * Math.PI * 0.0625]);
 		ctx.beginPath();

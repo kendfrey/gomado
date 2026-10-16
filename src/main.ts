@@ -1053,6 +1053,10 @@ function randomDemo()
 		stoneColours.push("yellow");
 	if (Math.random() < 0.5)
 		contents.labels = [];
+	if (Math.random() < 0.5)
+		contents.lines = [];
+	if (Math.random() < 0.5)
+		contents.arrows = [];
 	const stones = new Set();
 	const symbols = ["circle", "cross", "square", "triangle"];
 	const moveTypes = ["brilliant", "excellent", "good", "mistake", "blunder"] as const;
@@ -1074,6 +1078,18 @@ function randomDemo()
 						: String(Math.floor(Math.random() ** 2 * 99 + 1)))
 					: symbols[Math.floor(Math.random() * symbols.length)];
 				contents.labels.push([[x, y], label]);
+			}
+			if (contents.lines && Math.random() < 0.01)
+			{
+				const x2 = Math.floor(Math.random() * contents.width);
+				const y2 = Math.floor(Math.random() * contents.height);
+				contents.lines.push([[x, y], [x2, y2]]);
+			}
+			if (contents.arrows && Math.random() < 0.01)
+			{
+				const x2 = Math.floor(Math.random() * contents.width);
+				const y2 = Math.floor(Math.random() * contents.height);
+				contents.arrows.push([[x, y], [x2, y2]]);
 			}
 		}
 	}
