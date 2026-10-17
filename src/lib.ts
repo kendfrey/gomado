@@ -15,6 +15,7 @@ export interface BoardContents
 	policyQuality?: number[];
 	ownership?: number[];
 	moves?: AnalysisMove[];
+	cursor?: [Coord, string];
 }
 
 export interface AnalysisMove
@@ -55,6 +56,8 @@ const defaultStyle: BoardStyle = {
 };
 
 const boardContentsCache: WeakMap<HTMLCanvasElement, [BoardContents, Partial<BoardStyle> | undefined]> = new WeakMap();
+const boardLocationCache: WeakMap<HTMLCanvasElement, { x: number; y: number; w: number; h: number; s: number; }> =
+	new WeakMap();
 
 export function enableAutoRender(canvas: HTMLCanvasElement): () => void
 {
@@ -66,6 +69,26 @@ export function enableAutoRender(canvas: HTMLCanvasElement): () => void
 	});
 	observer.observe(canvas);
 	return () => observer.disconnect();
+}
+
+export function hitTest(
+	canvas: HTMLCanvasElement,
+	event: { clientX: number; clientY: number; },
+): Coord | undefined
+{
+	const location = boardLocationCache.get(canvas);
+	if (!location)
+		return undefined;
+
+	const rect = canvas.getBoundingClientRect();
+	const x = Math.floor(
+		((event.clientX - rect.left - canvas.clientLeft) * devicePixelRatio - location.x) / location.s,
+	);
+	const y = Math.floor(((event.clientY - rect.top - canvas.clientTop) * devicePixelRatio - location.y) / location.s);
+	if (x < 0 || y < 0 || x >= location.w || y >= location.h)
+		return undefined;
+
+	return [x, y];
 }
 
 export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, style?: Partial<BoardStyle>)
@@ -97,6 +120,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	const boardHeight = contents.height * s + marginTopPx + marginBottomPx;
 	const boardX = Math.floor((w - boardWidth) * 0.5) + marginLeftPx;
 	const boardY = Math.floor((h - boardHeight) * 0.5) + marginTopPx;
+	boardLocationCache.set(canvas, { x: boardX, y: boardY, w: contents.width, h: contents.height, s });
 	ctx.translate(boardX, boardY);
 	ctx.beginPath();
 	ctx.rect(-marginLeftPx, -marginTopPx, boardWidth, boardHeight);
@@ -116,6 +140,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	drawMarkupLines();
 	drawMoves();
 	drawNextMove();
+	drawCursor();
 	return;
 
 	function drawBackground()
@@ -815,6 +840,18 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		ctx.closePath();
 		ctx.stroke();
 		ctx.setLineDash([]);
+	}
+
+	function drawCursor()
+	{
+		if (!contents.cursor)
+			return;
+
+		const [[x, y], colour] = contents.cursor;
+		ctx.fillStyle = `rgb(from ${colour} r g b / 0.5)`;
+		ctx.beginPath();
+		ctx.arc((x + 0.5) * s, (y + 0.5) * s, s * 0.25, 0, 2 * Math.PI);
+		ctx.fill();
 	}
 
 	function getStarPoints(): Coord[]

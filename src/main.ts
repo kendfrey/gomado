@@ -1,4 +1,4 @@
-import { type BoardContents, type BoardStyle, drawBoard, enableAutoRender } from "./lib";
+import { type BoardContents, type BoardStyle, drawBoard, enableAutoRender, hitTest } from "./lib";
 import "./style.css";
 
 const demos: Record<string, () => void> = {
@@ -7,16 +7,44 @@ const demos: Record<string, () => void> = {
 	random: randomDemo,
 };
 
-const demosContainer = document.querySelector<HTMLDivElement>("#demos")!;
+let currentDemo: [BoardContents, Partial<BoardStyle>?] | null = null;
+
 const canvas = document.querySelector<HTMLCanvasElement>("#canvas")!;
 enableAutoRender(canvas);
+canvas.addEventListener("mousemove", event =>
+{
+	if (!currentDemo)
+		return;
 
+	const location = hitTest(canvas, event);
+	if (location && !currentDemo[0].stones.some(([[x, y], _]) => x === location[0] && y === location[1]))
+		currentDemo[0].cursor = [location, currentDemo[0].stones[0]?.[1] ?? "black"];
+	else
+		currentDemo[0].cursor = undefined;
+	render();
+});
+canvas.addEventListener("mouseleave", () =>
+{
+	if (!currentDemo)
+		return;
+
+	currentDemo[0].cursor = undefined;
+	render();
+});
+
+const demosContainer = document.querySelector<HTMLDivElement>("#demos")!;
 for (const key in demos)
 {
 	const btn = document.createElement("button");
 	btn.textContent = key;
 	btn.addEventListener("click", demos[key]);
 	demosContainer.appendChild(btn);
+}
+
+function render()
+{
+	if (currentDemo)
+		drawBoard(canvas, ...currentDemo);
 }
 
 function demo()
@@ -747,7 +775,7 @@ function demo()
 		1.63406142e-08,
 		7.09845906e-08,
 	];
-	drawBoard(canvas, {
+	currentDemo = [{
 		width: 19,
 		height: 19,
 		stones: [
@@ -1012,12 +1040,13 @@ function demo()
 			{ move: [9, 5], order: 47, visits: 1, winrate: 0.755349919, scoreLead: 2.8290987, playSelectionValue: 0 },
 			{ move: [14, 7], order: 48, visits: 1, winrate: 0.822510511, scoreLead: 3.50785017, playSelectionValue: 0 },
 		],
-	});
+	}];
+	render();
 }
 
 function ownership()
 {
-	drawBoard(canvas, {
+	currentDemo = [{
 		width: 19,
 		height: 19,
 		stones: [
@@ -1463,7 +1492,8 @@ function ownership()
 			0.679454,
 			0.729048,
 		],
-	}, { coordsLocation: "none" });
+	}, { coordsLocation: "none" }];
+	render();
 }
 
 function randomDemo()
@@ -1639,7 +1669,8 @@ function randomDemo()
 		style.fontFamily = "Comic Sans MS";
 
 	console.log(contents, style);
-	drawBoard(canvas, contents, style);
+	currentDemo = [contents, style];
+	render();
 
 	function randomColour()
 	{
