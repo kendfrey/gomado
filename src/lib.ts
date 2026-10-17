@@ -13,6 +13,7 @@ export interface BoardContents
 	arrows?: [Coord, Coord][];
 	policy?: number[];
 	policyQuality?: number[];
+	ownership?: number[];
 	moves?: AnalysisMove[];
 }
 
@@ -46,7 +47,7 @@ const defaultStyle: BoardStyle = {
 	woodScale: 2,
 	lineColour: "black",
 	starPoints: "auto",
-	margin: 0.1,
+	margin: 0,
 	coords: "A1",
 	coordsLocation: "all",
 	fontFamily: "Arial, Helvetica, sans-serif",
@@ -106,6 +107,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	);
 
 	drawBackground();
+	drawOwnership();
 	drawLines();
 	drawStones();
 	drawLastMove();
@@ -133,6 +135,80 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 			ctx.fillStyle = gradient;
 			ctx.fillRect(-marginLeftPx, -marginTopPx, boardWidth, boardHeight);
 		}
+	}
+
+	function drawOwnership()
+	{
+		if (!contents.ownership)
+			return;
+
+		const image = new OffscreenCanvas(contents.width * 2 + 1, contents.height * 2 + 1);
+		const imageCtx = image.getContext("2d")!;
+		const imageData = imageCtx.createImageData(image.width, image.height);
+		for (let y = 0; y < contents.height; y++)
+		{
+			for (let x = 0; x < contents.width; x++)
+			{
+				const ownership = contents.ownership[y * contents.width + x] ?? 0;
+				const index = ((y * 2 + 1) * image.width + (x * 2) + 1) * 4;
+				const r = ownership > 0 ? 255 : 0;
+				imageData.data[index + 0] = r;
+				imageData.data[index + 1] = r;
+				imageData.data[index + 2] = r;
+				imageData.data[index + 3] = Math.abs(ownership * 0xdf);
+
+				let ownershipl = 0;
+				let ownershipt = 0;
+				if (x > 0)
+				{
+					ownershipl = contents.ownership[y * contents.width + x - 1] ?? 0;
+					const midOwnership = (ownershipl + ownership) * 0.5;
+					const indexl = index - 4;
+					const r = midOwnership > 0 ? 255 : 0;
+					imageData.data[indexl + 0] = r;
+					imageData.data[indexl + 1] = r;
+					imageData.data[indexl + 2] = r;
+					imageData.data[indexl + 3] = Math.abs(midOwnership * 0xdf);
+				}
+				if (y > 0)
+				{
+					ownershipt = contents.ownership[(y - 1) * contents.width + x] ?? 0;
+					const midOwnership = (ownershipt + ownership) * 0.5;
+					const indext = index - image.width * 4;
+					const r = midOwnership > 0 ? 255 : 0;
+					imageData.data[indext + 0] = r;
+					imageData.data[indext + 1] = r;
+					imageData.data[indext + 2] = r;
+					imageData.data[indext + 3] = Math.abs(midOwnership * 0xdf);
+				}
+				if (x > 0 && y > 0)
+				{
+					const ownershiptl = contents.ownership[(y - 1) * contents.width + x - 1] ?? 0;
+					const midOwnership = (ownershiptl + ownershipl + ownershipt + ownership) * 0.25;
+					const indextl = index - image.width * 4 - 4;
+					const r = midOwnership > 0 ? 255 : 0;
+					imageData.data[indextl + 0] = r;
+					imageData.data[indextl + 1] = r;
+					imageData.data[indextl + 2] = r;
+					imageData.data[indextl + 3] = Math.abs(midOwnership * 0xdf);
+				}
+			}
+		}
+
+		imageCtx.putImageData(imageData, 0, 0);
+		ctx.imageSmoothingEnabled = true;
+		ctx.imageSmoothingQuality = "high";
+		ctx.drawImage(
+			image,
+			0.5,
+			0.5,
+			contents.width * 2,
+			contents.height * 2,
+			0,
+			0,
+			contents.width * s,
+			contents.height * s,
+		);
 	}
 
 	function drawLines()
@@ -188,6 +264,29 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 			ctx.beginPath();
 			ctx.arc((x + 0.5) * s, (y + 0.5) * s, s * 0.5, 0, Math.PI * 2);
 			ctx.fill();
+		}
+
+		drawStonesOwnership();
+	}
+
+	function drawStonesOwnership()
+	{
+		if (!contents.ownership)
+			return;
+
+		for (const [[x, y], _] of contents.stones)
+		{
+			const ownership = contents.ownership[y * contents.width + x] ?? 0;
+			const colour = ownership > 0 ? `rgb(255 255 255 / ${ownership})` : `rgb(0 0 0 / ${-ownership})`;
+			ctx.strokeStyle = shineGradient(colour, x, y);
+			ctx.lineWidth = s * 0.15;
+			ctx.lineCap = "square";
+			ctx.beginPath();
+			ctx.moveTo((x + 0.35) * s, (y + 0.35) * s);
+			ctx.lineTo((x + 0.65) * s, (y + 0.65) * s);
+			ctx.moveTo((x + 0.65) * s, (y + 0.35) * s);
+			ctx.lineTo((x + 0.35) * s, (y + 0.65) * s);
+			ctx.stroke();
 		}
 	}
 
