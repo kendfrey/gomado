@@ -269,6 +269,39 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 		drawStonesOwnership();
 	}
 
+	function drawShadows()
+	{
+		ctx.save();
+		ctx.globalCompositeOperation = "multiply";
+
+		for (const [[x, y], colour] of contents.stones)
+		{
+			const gradient = ctx.createRadialGradient(
+				(x + 0.55) * s,
+				(y + 0.55) * s,
+				s * 0.3,
+				(x + 0.55) * s,
+				(y + 0.55) * s,
+				s * 0.6,
+			);
+			gradient.addColorStop(
+				0,
+				`color(from ${colour} srgb calc(r * 0.5) calc(g * 0.5) calc(b * 0.5))`,
+			);
+			gradient.addColorStop(
+				0.7,
+				`color(from ${colour} srgb calc(r * 0.1 + 0.8) calc(g * 0.1 + 0.8) calc(b * 0.1 + 0.8))`,
+			);
+			gradient.addColorStop(1, "#ffffff");
+			ctx.fillStyle = gradient;
+			ctx.beginPath();
+			ctx.arc((x + 0.55) * s, (y + 0.55) * s, s * 0.6, 0, Math.PI * 2);
+			ctx.fill();
+		}
+
+		ctx.restore();
+	}
+
 	function drawStonesOwnership()
 	{
 		if (!contents.ownership)
@@ -343,39 +376,6 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 				(y + 0.5) * s - (metrics.actualBoundingBoxDescent - metrics.actualBoundingBoxAscent) * 0.5,
 			);
 		}
-	}
-
-	function drawShadows()
-	{
-		ctx.save();
-		ctx.globalCompositeOperation = "multiply";
-
-		for (const [[x, y], colour] of contents.stones)
-		{
-			const gradient = ctx.createRadialGradient(
-				(x + 0.55) * s,
-				(y + 0.55) * s,
-				s * 0.3,
-				(x + 0.55) * s,
-				(y + 0.55) * s,
-				s * 0.6,
-			);
-			gradient.addColorStop(
-				0,
-				`color(from ${colour} srgb calc(r * 0.5) calc(g * 0.5) calc(b * 0.5))`,
-			);
-			gradient.addColorStop(
-				0.7,
-				`color(from ${colour} srgb calc(r * 0.1 + 0.8) calc(g * 0.1 + 0.8) calc(b * 0.1 + 0.8))`,
-			);
-			gradient.addColorStop(1, "#ffffff");
-			ctx.fillStyle = gradient;
-			ctx.beginPath();
-			ctx.arc((x + 0.55) * s, (y + 0.55) * s, s * 0.6, 0, Math.PI * 2);
-			ctx.fill();
-		}
-
-		ctx.restore();
 	}
 
 	function drawPolicy()
