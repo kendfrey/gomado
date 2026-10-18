@@ -1661,7 +1661,7 @@ function randomDemo()
 		}
 	}
 	if (Math.random() < 0.5)
-		style.margin = Math.max(0, Math.min(1, Math.random() * 1.5 - 0.25));
+		style.padding = Math.max(0, Math.min(1, Math.random() * 1.5 - 0.25));
 	if (Math.random() < 0.5)
 		style.coords = "kanji";
 	style.coordsLocation = coordLocations[Math.floor(Math.random() * coordLocations.length)];

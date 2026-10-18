@@ -1,44 +1,130 @@
+/** A board location in `[x, y]` format, where `[0, 0]` is the top-left corner. */
 export type Coord = [number, number];
 
+/** A CSS colour string. */
+export type CSSColour = string;
+
+/** The information to render on the board, including stones, markup, and annotations. */
 export interface BoardContents
 {
+	/** The number of lines wide the board is. */
 	width: number;
+
+	/** The number of lines tall the board is. */
 	height: number;
-	stones: [Coord, string][];
+
+	/** The list of stones on the board. Stones can have any colour, but typically will be "black" or "white". */
+	stones: [Coord, CSSColour][];
+
+	/** The location of the most recent move. */
 	lastMove?: Coord;
+
+	/** The annotation for the most recent move. */
 	lastMoveType?: "brilliant" | "excellent" | "good" | "mistake" | "blunder";
-	nextMove?: [Coord, string];
+
+	/** The location and colour of the next move. */
+	nextMove?: [Coord, CSSColour];
+
+	/** Labeled points on the board. */
 	labels?: [Coord, string][];
+
+	/** Markup lines on the board. */
 	lines?: [Coord, Coord][];
+
+	/** Markup arrows on the board. The arrowhead is drawn at the second location in the pair. */
 	arrows?: [Coord, Coord][];
+
+	/** The policy vector, in row-major order. */
 	policy?: number[];
+
+	/** The policy quality vector, in row-major order. -1 is red and 1 is blue. */
 	policyQuality?: number[];
+
+	/** The ownership vector, in row-major order. -1 is black, 1 is white. */
 	ownership?: number[];
+
+	/** The list of potential moves and their statistics. */
 	moves?: AnalysisMove[];
-	cursor?: [Coord, string];
+
+	/** The cursor overlay location and colour. */
+	cursor?: [Coord, CSSColour];
 }
 
+/** The statistics of a potential move. */
 export interface AnalysisMove
 {
+	/** The location of the move. */
 	move: Coord;
+
+	/** The ranking of the move, where 0 is the best move. */
 	order: number;
+
+	/** The number of visits this move has received. */
 	visits: number;
+
+	/** The winrate of the move. */
 	winrate: number;
+
+	/** The score of the move. */
 	scoreLead: number;
+
+	/** The relative weight that the engine gives this move. Determines the colour of the rendered highlight. */
 	playSelectionValue: number;
 }
 
+/** Styling information for rendering the board. */
 export interface BoardStyle
 {
-	backgroundColour: string;
-	woodColour: string | null;
+	/** The colour of the board. */
+	backgroundColour: CSSColour;
+
+	/** The secondary colour of the board, used for the wood grain. */
+	woodColour: CSSColour | null;
+
+	/**
+	 * The size of the wood grain in pixels.
+	 * @default 2
+	 */
 	woodScale: number;
-	lineColour: string;
+
+	/** The colour of the lines. */
+	lineColour: CSSColour;
+
+	/**
+	 * The locations of the star points, or `"auto"`.
+	 * @default "auto"
+	 */
 	starPoints: Coord[] | "auto";
-	margin: number;
+
+	/**
+	 * The padding at the edge of the board, in stone diameters.
+	 * @default 0
+	 */
+	padding: number;
+
+	/**
+	 * The coordinate system used for labels. `"A1"` puts letters from left to right and numbers from bottom to top.
+	 * `"kanji"` puts numbers from left to right and kanji numbers from top to bottom.
+	 * @default "A1"
+	 */
 	coords: "A1" | "kanji";
+
+	/**
+	 * Which sides of the board to display coordinates on.
+	 * @default "all"
+	 */
 	coordsLocation: "all" | "none" | "top-left" | "bottom-left" | "top-right" | "bottom-right";
+
+	/**
+	 * The font family used for rendering text on the board.
+	 * @default "Arial, Helvetica, sans-serif"
+	 */
 	fontFamily: string;
+
+	/**
+	 * The minimum threshold for displaying move statistics, in the range [0, 1]. Moves with a `playSelectionValue`
+	 * below the best move's `playSelectionValue` raised to this power will not display statistics.
+	 */
 	moveStatsThreshold: number;
 }
 
@@ -48,7 +134,7 @@ const defaultStyle: BoardStyle = {
 	woodScale: 2,
 	lineColour: "black",
 	starPoints: "auto",
-	margin: 0,
+	padding: 0,
 	coords: "A1",
 	coordsLocation: "all",
 	fontFamily: "Arial, Helvetica, sans-serif",
@@ -59,6 +145,11 @@ const boardContentsCache: WeakMap<HTMLCanvasElement, [BoardContents, Partial<Boa
 const boardLocationCache: WeakMap<HTMLCanvasElement, { x: number; y: number; w: number; h: number; s: number; }> =
 	new WeakMap();
 
+/**
+ * Makes the board automatically re-render the last call to {@linkcode drawBoard} when the canvas is resized.
+ * @param canvas The canvas element to draw to.
+ * @returns A cleanup function that removes the resize handler and stops the board from automatically re-rendering.
+ */
 export function enableAutoRender(canvas: HTMLCanvasElement): () => void
 {
 	const observer = new ResizeObserver(() =>
@@ -71,6 +162,12 @@ export function enableAutoRender(canvas: HTMLCanvasElement): () => void
 	return () => observer.disconnect();
 }
 
+/**
+ * Finds the coordinates on the board corresponding to the given input event.
+ * @param canvas The canvas element where the board was drawn.
+ * @param event The input event.
+ * @returns The corresponding board location, or `undefined` if out of bounds.
+ */
 export function hitTest(
 	canvas: HTMLCanvasElement,
 	event: { clientX: number; clientY: number; },
@@ -91,6 +188,12 @@ export function hitTest(
 	return [x, y];
 }
 
+/**
+ * Draws the board onto the canvas.
+ * @param canvas The canvas element to draw to.
+ * @param contents The contents of the board.
+ * @param style Styling information.
+ */
 export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, style?: Partial<BoardStyle>)
 {
 	const fullStyle: BoardStyle = { ...defaultStyle, ...style };
@@ -102,28 +205,28 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	ctx.clearRect(0, 0, w, h);
 
 	const coordSides = getCoordSides();
-	const marginTop = fullStyle.margin + (coordSides.top ? 1 : 0);
-	const marginBottom = fullStyle.margin + (coordSides.bottom ? 1 : 0);
-	const marginLeft = fullStyle.margin + (coordSides.left ? 1 : 0);
-	const marginRight = fullStyle.margin + (coordSides.right ? 1 : 0);
+	const paddingTop = fullStyle.padding + (coordSides.top ? 1 : 0);
+	const paddingBottom = fullStyle.padding + (coordSides.bottom ? 1 : 0);
+	const paddingLeft = fullStyle.padding + (coordSides.left ? 1 : 0);
+	const paddingRight = fullStyle.padding + (coordSides.right ? 1 : 0);
 	const s = Math.floor(
 				(Math.min(
-					w / (contents.width + marginLeft + marginRight),
-					h / (contents.height + marginTop + marginBottom),
+					w / (contents.width + paddingLeft + paddingRight),
+					h / (contents.height + paddingTop + paddingBottom),
 				) + 1) * 0.5,
 			) * 2 - 1;
-	const marginTopPx = Math.floor(marginTop * s);
-	const marginBottomPx = Math.floor(marginBottom * s);
-	const marginLeftPx = Math.floor(marginLeft * s);
-	const marginRightPx = Math.floor(marginRight * s);
-	const boardWidth = contents.width * s + marginLeftPx + marginRightPx;
-	const boardHeight = contents.height * s + marginTopPx + marginBottomPx;
-	const boardX = Math.floor((w - boardWidth) * 0.5) + marginLeftPx;
-	const boardY = Math.floor((h - boardHeight) * 0.5) + marginTopPx;
+	const paddingTopPx = Math.floor(paddingTop * s);
+	const paddingBottomPx = Math.floor(paddingBottom * s);
+	const paddingLeftPx = Math.floor(paddingLeft * s);
+	const paddingRightPx = Math.floor(paddingRight * s);
+	const boardWidth = contents.width * s + paddingLeftPx + paddingRightPx;
+	const boardHeight = contents.height * s + paddingTopPx + paddingBottomPx;
+	const boardX = Math.floor((w - boardWidth) * 0.5) + paddingLeftPx;
+	const boardY = Math.floor((h - boardHeight) * 0.5) + paddingTopPx;
 	boardLocationCache.set(canvas, { x: boardX, y: boardY, w: contents.width, h: contents.height, s });
 	ctx.translate(boardX, boardY);
 	ctx.beginPath();
-	ctx.rect(-marginLeftPx, -marginTopPx, boardWidth, boardHeight);
+	ctx.rect(-paddingLeftPx, -paddingTopPx, boardWidth, boardHeight);
 	ctx.clip();
 
 	const stones = new Map<string, string>(
@@ -146,10 +249,10 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 	function drawBackground()
 	{
 		ctx.fillStyle = fullStyle.backgroundColour;
-		ctx.fillRect(-marginLeftPx, -marginTopPx, boardWidth, boardHeight);
+		ctx.fillRect(-paddingLeftPx, -paddingTopPx, boardWidth, boardHeight);
 		if (fullStyle.woodColour !== null)
 		{
-			const gradient = ctx.createLinearGradient(-marginLeftPx, 0, -marginLeftPx + boardWidth, 0);
+			const gradient = ctx.createLinearGradient(-paddingLeftPx, 0, -paddingLeftPx + boardWidth, 0);
 			let a = boardWidth;
 			for (let x = 0; x < boardWidth; x += fullStyle.woodScale * devicePixelRatio)
 			{
@@ -158,7 +261,7 @@ export function drawBoard(canvas: HTMLCanvasElement, contents: BoardContents, st
 				gradient.addColorStop(x / boardWidth, `color(from ${fullStyle.woodColour} srgb r g b / ${alpha})`);
 			}
 			ctx.fillStyle = gradient;
-			ctx.fillRect(-marginLeftPx, -marginTopPx, boardWidth, boardHeight);
+			ctx.fillRect(-paddingLeftPx, -paddingTopPx, boardWidth, boardHeight);
 		}
 	}
 
