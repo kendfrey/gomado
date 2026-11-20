@@ -1,7 +1,14 @@
 {
 	"name": "gomado",
-	"version": "0.0.0",
-	"private": true,
+	"version": "0.1.0",
+	"description": "A UI component for rendering a Go board.",
+	"keywords": ["go", "baduk", "weiqi", "goban", "board"],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kendfrey/gomado.git"
+	},
+	"license": "MIT",
+	"author": "Kendall Frey",
 	"type": "module",
 	"exports": {
 		".": {
